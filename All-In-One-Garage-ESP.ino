@@ -43,7 +43,7 @@
 //* OTA Firmware Update parameters:
 //*-----------------------------------
 
-const char* our_host_name =     "GarageESP";
+const char* our_host_name =     "GarageESP2";
 String unique_client_name =  String(our_host_name) + "-" + String(ESP.getChipId()) + "-" + String(ESP.getFlashChipId());
 const char* update_path =       "/WebFirmwareUpgrade";
 //* these defaults can be updated on the config page:
@@ -54,8 +54,8 @@ char update_password[40] =      OTA_PASSWORD;
 //* Define the magnetic door switch and relay pins for left (or only) garage door:
 //*---------------------------------------------------------------------------------
 
-#define LEFT_RELAY_PIN D7
-// #define LEFT_DOOR_PIN  Dx
+// #define LEFT_RELAY_PIN Dx
+#define LEFT_DOOR_PIN  D1
 
 #define LEFT_DOOR_NAME          "Garage Door"
 #define LEFT_DOOR_TOPIC         "garage/left/door"
@@ -82,7 +82,7 @@ String right_door_state = DOOR_STATEUNKNOWN;
 //* Passive Speaker Buzzer (optional)
 //*-----------------------------------
 
-#define SPEAKER_PIN D1
+// #define SPEAKER_PIN Dx
 void sound_alert();
 void signal_success();
 void signal_error();
@@ -91,7 +91,7 @@ void signal_error();
 //* Digital Humidity and Temperature Sensor (optional)
 //*----------------------------------------------------
 
-#define DHT_PIN  D2             //* DHT-22 Pin connection
+// #define DHT_PIN  Dx             //* DHT-22 Pin connection
 #define DHT_TYPE DHT22          //* DHT Type is DHT22 (AM2302)
 
 #define HUMIDITY_NAME           "Garage Humidity"
@@ -103,8 +103,8 @@ void signal_error();
 //* Left Car HC-SR04 Distance Sensor (optional)
 //*----------------------------------------------------
 
-#define ECHO_TRIGGER_PIN  D5
-#define ECHO_DETECT_PIN   D5
+// #define ECHO_TRIGGER_PIN  Dx
+// #define ECHO_DETECT_PIN   Dx
 
 #define LEFT_CAR_NAME           "Garage Left Lane"
 #define LEFT_CAR_TOPIC          "garage/left/car"
@@ -139,7 +139,7 @@ char max_distance[4] = "220";   //* maximum valid distance for detection
 
 #define COMMAND_TOPIC           "garage/command"
 //* these defaults can be updated on the config page:
-char mqtt_server[40] =          "172.19.54.7";
+char mqtt_server[40] =          "10.9.8.7";
 char mqtt_port[6] =             "1883";
 char mqtt_user[40] =            MQTT_USER;
 char mqtt_pass[40] =            MQTT_PASSWORD;
@@ -151,8 +151,8 @@ char mqttDiscoveryPrefix[40] =  "homeassistant";
 
 #define MOTION_PIN D6
 
-#define MOTION_NAME             "Garage Motion"
-#define MOTION_TOPIC            "garage/motion"
+#define MOTION_NAME             "Garage Motion West"
+#define MOTION_TOPIC            "garage/motion-west"
 #define MOTION_DETECTED             "Detected"
 #define MOTION_NOT_DETECTED         "Clear"
 
@@ -346,7 +346,10 @@ wifiManager.addParameter(&custom_max_distance);
 //* ----------------------------
 //* reset settings - for testing
 //* ----------------------------
+
 // wifiManager.resetSettings();
+
+//* ----------------------------
 
           //* set minimum quality of signal so it ignores AP's under that quality
           //* defaults to 8%
@@ -817,30 +820,29 @@ check_occupancy();
 #endif
 }
 
-//*----------------------------------
-//* Connect to MQTT broker.
-//*----------------------------------
+            //*----------------------------------
+            //* Connect to MQTT broker.
+            //*----------------------------------
 
-void connect_to_mqtt_broker() {
-  // Loop until we're reconnected
-  while (!mqttClient.connected()) {
-    Serial.println("Attempting MQTT connection...");
-    if (mqttClient.connect(unique_client_name.c_str(), mqtt_user, mqtt_pass)) {
-      Serial.println("Connected");
-      mqttClient.subscribe(COMMAND_TOPIC);
+            void connect_to_mqtt_broker() {
+              // Loop until we're reconnected
+              while (!mqttClient.connected()) {
+                Serial.println("Attempting MQTT connection...");
+                if (mqttClient.connect(unique_client_name.c_str(), mqtt_user, mqtt_pass)) {
+                  Serial.println("Connected");
+                  mqttClient.subscribe(COMMAND_TOPIC);
 #ifndef DHT_PIN
-      mqttClient.subscribe(HUMIDITY_TOPIC);
-      mqttClient.subscribe(TEMPERATURE_TOPIC);
+mqttClient.subscribe(HUMIDITY_TOPIC);
+mqttClient.subscribe(TEMPERATURE_TOPIC);
 #endif
-    } else {
-      Serial.print("Failed, rc=");
-      Serial.print(mqttClient.state());
-      Serial.println(", trying again in 60 seconds");
-      signal_beep(NOTE_F6);
-      //* Wait 60 seconds before retrying
-      delay(60000);
-    }
-  }
+} else {
+Serial.print("Failed, rc=");
+Serial.print(mqttClient.state());
+Serial.println(", try again in 5 seconds");
+//* Wait 5 seconds before retrying
+delay(5000);
+}
+}
 }
 
                   //*------------------------
@@ -855,10 +857,10 @@ void connect_to_mqtt_broker() {
                     payload[length] = '\0';
                     strTopic = String((char*)topic);
                     strPayload = String((char*)payload);
-                    Serial.print("Topic: ");
-                    Serial.print(strTopic);
-                    Serial.print(" Payload: ");
-                    Serial.println(strPayload);
+//                    Serial.print("Topic: ");
+//                    Serial.print(strTopic);
+//                    Serial.print(" Payload: ");
+//                    Serial.println(strPayload);
                     if (strTopic == COMMAND_TOPIC) {
 #ifdef LEFT_RELAY_PIN
 if ((strPayload == "OPEN") || (strPayload == "OPEN LEFT")) {
@@ -1031,7 +1033,7 @@ void signal_error() {
 void signal_beep(unsigned int note) {
 #ifdef SPEAKER_PIN
   tone(SPEAKER_PIN, note);
-  delay(50);
+  delay(100);
   noTone(SPEAKER_PIN);
   pinMode(SPEAKER_PIN, LOW);
   delay(100);
