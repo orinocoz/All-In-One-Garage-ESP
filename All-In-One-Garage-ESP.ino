@@ -139,7 +139,7 @@ char max_distance[4] = "220";   //* maximum valid distance for detection
 
 #define COMMAND_TOPIC           "garage/command"
 //* these defaults can be updated on the config page:
-char mqtt_server[40] =          "10.9.8.7";
+char mqtt_server[40] =          "172.19.54.7";
 char mqtt_port[6] =             "1883";
 char mqtt_user[40] =            MQTT_USER;
 char mqtt_pass[40] =            MQTT_PASSWORD;
@@ -346,7 +346,7 @@ wifiManager.addParameter(&custom_max_distance);
 //* ----------------------------
 //* reset settings - for testing
 //* ----------------------------
-//wifiManager.resetSettings();
+// wifiManager.resetSettings();
 
           //* set minimum quality of signal so it ignores AP's under that quality
           //* defaults to 8%
@@ -817,29 +817,30 @@ check_occupancy();
 #endif
 }
 
-            //*----------------------------------
-            //* Connect to MQTT broker.
-            //*----------------------------------
+//*----------------------------------
+//* Connect to MQTT broker.
+//*----------------------------------
 
-            void connect_to_mqtt_broker() {
-              // Loop until we're reconnected
-              while (!mqttClient.connected()) {
-                Serial.println("Attempting MQTT connection...");
-                if (mqttClient.connect(unique_client_name.c_str(), mqtt_user, mqtt_pass)) {
-                  Serial.println("Connected");
-                  mqttClient.subscribe(COMMAND_TOPIC);
+void connect_to_mqtt_broker() {
+  // Loop until we're reconnected
+  while (!mqttClient.connected()) {
+    Serial.println("Attempting MQTT connection...");
+    if (mqttClient.connect(unique_client_name.c_str(), mqtt_user, mqtt_pass)) {
+      Serial.println("Connected");
+      mqttClient.subscribe(COMMAND_TOPIC);
 #ifndef DHT_PIN
-mqttClient.subscribe(HUMIDITY_TOPIC);
-mqttClient.subscribe(TEMPERATURE_TOPIC);
+      mqttClient.subscribe(HUMIDITY_TOPIC);
+      mqttClient.subscribe(TEMPERATURE_TOPIC);
 #endif
-} else {
-Serial.print("Failed, rc=");
-Serial.print(mqttClient.state());
-Serial.println(", try again in 5 seconds");
-//* Wait 5 seconds before retrying
-delay(5000);
-}
-}
+    } else {
+      Serial.print("Failed, rc=");
+      Serial.print(mqttClient.state());
+      Serial.println(", trying again in 60 seconds");
+      signal_beep(NOTE_F6);
+      //* Wait 60 seconds before retrying
+      delay(60000);
+    }
+  }
 }
 
                   //*------------------------
@@ -1030,7 +1031,7 @@ void signal_error() {
 void signal_beep(unsigned int note) {
 #ifdef SPEAKER_PIN
   tone(SPEAKER_PIN, note);
-  delay(100);
+  delay(50);
   noTone(SPEAKER_PIN);
   pinMode(SPEAKER_PIN, LOW);
   delay(100);
